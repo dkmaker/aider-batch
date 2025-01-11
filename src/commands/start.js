@@ -2,6 +2,7 @@ import fs from 'fs-extra';
 import path from 'path';
 import chalk from 'chalk';
 import { spawn } from 'child_process';
+import Logger from '../utils/logger.js';
 
 async function findBatchDir(batchName) {
   const currentDir = process.cwd();
@@ -46,8 +47,18 @@ async function runAider(args, env) {
 
     const aider = spawn('aider', formattedArgs, {
       env: { ...process.env, ...env },
-      stdio: 'inherit',
       shell: true // Use shell to handle quotes properly
+    });
+
+    // Capture stdout and stderr
+    aider.stdout.on('data', (data) => {
+      const output = data.toString();
+      console.log(output.trimEnd());
+    });
+
+    aider.stderr.on('data', (data) => {
+      const output = data.toString();
+      console.error(output.trimEnd());
     });
 
     aider.on('close', (code) => {
@@ -65,17 +76,38 @@ async function runAider(args, env) {
 }
 
 export async function startBatch(batchName) {
+  let logger;
   try {
     // Find and load config
     const { configPath, projectDir } = await findBatchDir(batchName);
     const config = await fs.readJson(configPath);
     const templatePath = path.join(projectDir, 'prompt-template.md');
+
+    // Initialize logger
+    logger = new Logger(batchName, config);
+    await logger.initialize(projectDir);
+    logger.interceptConsole();
     const messageFile = path.join(projectDir, 'LastMessage.txt');
 
     console.log(chalk.blue(`Starting batch processing for '${batchName}'...`));
 
     // Process each batch
-    for (const batch of config.batches) {
+    for (let i = 0; i < config.batches.length; i++) {
+      const batch = config.batches[i];
+      const batchNumber = i + 1;
+      const totalBatches = config.batches.length;
+      
+      await logger.writeToLog('\n' + '='.repeat(80));
+      await logger.writeToLog(`EXECUTION ${batchNumber}/${totalBatches}`);
+      await logger.writeToLog('='.repeat(80));
+      await logger.writeToLog('Batch Configuration:');
+      await logger.writeToLog(JSON.stringify({
+        files: batch.file,
+        params: batch.params || [],
+        replaceVariables: batch.replaceVariables
+      }, null, 2));
+      await logger.writeToLog('='.repeat(80));
+
       console.log(chalk.yellow(`\nProcessing files: ${batch.file.join(', ')}`));
 
       // Process template
@@ -113,5 +145,11 @@ export async function startBatch(batchName) {
     console.log(chalk.green('\n✓ All batches completed successfully'));
   } catch (error) {
     throw error;
+  } finally {
+    // Restore console and close logger
+    if (logger) {
+      logger.restoreConsole();
+      await logger.close();
+    }
   }
 }
