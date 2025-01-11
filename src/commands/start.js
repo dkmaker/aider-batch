@@ -25,11 +25,29 @@ async function processTemplate(templatePath, variables) {
   return content;
 }
 
+function formatArgument(arg) {
+  // Handle arguments that contain spaces by wrapping in quotes
+  return arg.includes(' ') ? `"${arg}"` : arg;
+}
+
 async function runAider(args, env) {
   return new Promise((resolve, reject) => {
-    const aider = spawn('aider', args, {
+    // Convert array of arguments into properly formatted command-line arguments
+    const formattedArgs = args.flatMap(arg => {
+      // Split on spaces only if not wrapped in quotes
+      if (arg.startsWith('"') && arg.endsWith('"')) {
+        return [arg];
+      }
+      return arg.split(' ').map(formatArgument);
+    });
+
+    console.log(chalk.gray('Running Aider with arguments:'));
+    console.log(chalk.gray(formattedArgs.join(' ')));
+
+    const aider = spawn('aider', formattedArgs, {
       env: { ...process.env, ...env },
-      stdio: 'inherit'
+      stdio: 'inherit',
+      shell: true // Use shell to handle quotes properly
     });
 
     aider.on('close', (code) => {
