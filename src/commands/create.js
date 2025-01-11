@@ -3,15 +3,14 @@ import path from 'path';
 import chalk from 'chalk';
 
 const defaultConfig = {
-  commonFiles: {
-    read: [
-      "src/utils/requestHandlerFactory.js",
-      "src/utils/responseFormatter.js",
-      "src/utils/errorHandler.js",
-      "src/utils/validators.js"
+  global: {
+    readFile: [
+      "docs/system-architecture.md",
+      "docs/api-guidelines.md",
+      "src/types/common.ts"
     ],
-    write: [
-      "src/functions/httpUser.js"
+    file: [
+      "src/handlers/system.ts"
     ]
   },
   env: {
@@ -26,41 +25,48 @@ const defaultConfig = {
     "--no-auto-lint",
     "--yes-always",
     "--no-git",
-    "--no-auto-commits",
-    "--message-file Aider-Message.txt"
+    "--no-auto-commits"
   ],
   batches: [
     {
-      "name": "Example Batch",
-      "read": [
-        "src/api/user.js",
-        "src/models/user.js"
+      "file": [
+        "src/handlers/user.ts",
+        "src/handlers/admin.ts"
       ],
-      "write": [
-        "src/controllers/userController.js"
-      ],
-      "params": [
-        "--file src/api/user.js"
-      ],
-      "variables": {
-        "SourceFile": "src/api/user.js",
-        "SwaggerFile": "swagger/user-api.json"
+      "params": [],
+      "replaceVariables": {
+        "HandlerType": "System Handler",
+        "HandlerFile": "src/handlers/system.ts",
+        "Guidelines": "docs/api-guidelines.md"
       }
     }
   ]
 };
 
-const defaultTemplate = `# Process %%SourceFile%%
+const defaultTemplate = `# Update %%HandlerType%%
 
-Using the Swagger definition from %%SwaggerFile%%, analyze and update the implementation.
+Please review and update the handler implementation in %%HandlerFile%% to ensure it follows our system architecture and API guidelines.
 
-## Context Files
-The following files provide context for the implementation:
-- API Definition: %%SwaggerFile%%
-- Source File: %%SourceFile%%
+## Context
+The following files provide important context:
+- System Architecture: Explains our overall architecture and design principles
+- API Guidelines: Contains our API standards and best practices
+- Common Types: Shared type definitions used across handlers
+
+## Requirements
+1. Ensure the handler follows the structure shown in system.ts
+2. Apply the API guidelines from %%Guidelines%%
+3. Use appropriate types from common.ts
+4. Maintain consistent error handling patterns
+5. Add JSDoc comments for public methods
 
 ## Task
-Please analyze the implementation and suggest improvements based on the Swagger definition.`;
+Please analyze the implementation and:
+1. Update the code structure to match our standards
+2. Add proper type definitions
+3. Implement error handling
+4. Add documentation
+5. Ensure consistency with other handlers`;
 
 export async function createProject(projectName) {
   const projectDir = `.aiderBatch_${projectName}`;

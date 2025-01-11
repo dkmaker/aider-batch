@@ -70,34 +70,37 @@ export async function startBatch(batchName) {
     const { configPath, projectDir } = await findBatchDir(batchName);
     const config = await fs.readJson(configPath);
     const templatePath = path.join(projectDir, 'prompt-template.md');
-    const messageFile = path.join(projectDir, 'Aider-Message.txt');
+    const messageFile = path.join(projectDir, 'LastMessage.txt');
 
     console.log(chalk.blue(`Starting batch processing for '${batchName}'...`));
 
     // Process each batch
     for (const batch of config.batches) {
-      console.log(chalk.yellow(`\nProcessing batch: ${batch.name}`));
+      console.log(chalk.yellow(`\nProcessing files: ${batch.file.join(', ')}`));
 
       // Process template
-      const processedTemplate = await processTemplate(templatePath, batch.variables);
+      const processedTemplate = await processTemplate(templatePath, batch.replaceVariables);
       await fs.writeFile(messageFile, processedTemplate);
 
       // Prepare arguments
       const args = [
         ...config.params,
         ...(batch.params || []),
-        ...config.commonFiles.read.map(f => `--read ${f}`),
-        ...config.commonFiles.write.map(f => `--file ${f}`),
-        ...(batch.read || []).map(f => `--read ${f}`),
-        ...(batch.write || []).map(f => `--file ${f}`)
+        // Read files only allowed at global config level
+        ...config.global.readFile.map(f => `--read ${f}`),
+        // Files can be specified at both levels
+        ...config.global.file.map(f => `--file ${f}`),
+        ...(batch.file || []).map(f => `--file ${f}`),
+        // Add message file parameter in code rather than config
+        `--message-file ${messageFile}`
       ];
 
       // Run Aider
       try {
         await runAider(args, config.env);
-        console.log(chalk.green(`✓ Completed batch: ${batch.name}`));
+        console.log(chalk.green(`✓ Completed processing files`));
       } catch (error) {
-        console.error(chalk.red(`✗ Failed batch: ${batch.name}`));
+        console.error(chalk.red(`✗ Failed processing files`));
         throw error;
       }
     }

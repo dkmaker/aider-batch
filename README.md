@@ -24,15 +24,14 @@ The `batch-config.json` file is created with example configuration that you can 
 
 ```json
 {
-  "commonFiles": {
-    "read": [
-      "src/utils/requestHandlerFactory.js",
-      "src/utils/responseFormatter.js",
-      "src/utils/errorHandler.js",
-      "src/utils/validators.js"
+  "global": {
+    "readFile": [
+      "docs/system-architecture.md",    // System-wide documentation
+      "docs/api-guidelines.md",         // API standards
+      "src/types/common.ts"            // Shared type definitions
     ],
-    "write": [
-      "src/functions/httpUser.js"
+    "file": [
+      "src/handlers/system.ts"         // Reference implementation
     ]
   },
   "env": {
@@ -47,36 +46,33 @@ The `batch-config.json` file is created with example configuration that you can 
     "--no-auto-lint",
     "--yes-always",
     "--no-git",
-    "--no-auto-commits",
-    "--message-file Aider-Message.txt"
+    "--no-auto-commits"
   ],
   "batches": [
     {
-      "name": "Example Batch",
-      "read": [
-        "src/api/user.js",
-        "src/models/user.js"
+      "file": [                        // Files to be modified
+        "src/handlers/user.ts",
+        "src/handlers/admin.ts"
       ],
-      "write": [
-        "src/controllers/userController.js"
-      ],
-      "params": [
-        "--file src/api/user.js"
-      ],
-      "variables": {
-        "SourceFile": "src/api/user.js",
-        "SwaggerFile": "swagger/user-api.json"
+      "params": [],
+      "replaceVariables": {            // Template variables
+        "HandlerType": "System Handler",
+        "HandlerFile": "src/handlers/system.ts",
+        "Guidelines": "docs/api-guidelines.md"
       }
     }
   ]
 }
 ```
 
+This example configuration demonstrates a common use case: standardizing multiple system handlers based on a reference implementation and documentation.
+
 ### Configuration Sections
 
-1. **commonFiles**: Files that should be included in every batch operation
-   - `read`: Array of files to be read in every batch
-   - `write`: Array of files that may be modified in every batch
+1. **global**: Settings that apply across all batch operations
+   - `readFile`: Array of files to be used as read-only context (matches Aider's --read argument)
+   - `file`: Array of files that may be modified (matches Aider's --file argument)
+   - Note: Read-only files can only be specified at the global level to prevent cache invalidation
 
 2. **env**: Environment variables set before invoking Aider
    - These variables will be set in the environment before each Aider execution
@@ -85,31 +81,45 @@ The `batch-config.json` file is created with example configuration that you can 
 3. **params**: Global parameters passed to every Aider invocation
    - Default parameters that configure Aider's behavior
    - These parameters are used for all batch operations
+   - Note: The --message-file parameter is handled internally by the tool
 
-4. **batches**: Array of batch operations to perform
-   - `name`: Descriptive name for the batch operation
-   - `read`: Additional files to read for this specific batch
-   - `write`: Additional files that may be modified in this batch
-   - `params`: Additional parameters specific to this batch
-   - `variables`: Key-value pairs for template variable replacement
+4. **batches**: Array of file sets to process with the template
+   - `file`: Array of files to be modified (matches Aider's --file argument)
+   - `params`: Additional parameters for this set of files
+   - `replaceVariables`: Values to replace in the template for this set
 
 ## Template File
 
 The `prompt-template.md` file is created with example content that you can customize:
 
 ```markdown
-# Process %%SourceFile%%
+# Update %%HandlerType%%
 
-Using the Swagger definition from %%SwaggerFile%%, analyze and update the implementation.
+Please review and update the handler implementation in %%HandlerFile%% to ensure it follows our system architecture and API guidelines.
 
-## Context Files
-The following files provide context for the implementation:
-- API Definition: %%SwaggerFile%%
-- Source File: %%SourceFile%%
+## Context
+The following files provide important context:
+- System Architecture: Explains our overall architecture and design principles
+- API Guidelines: Contains our API standards and best practices
+- Common Types: Shared type definitions used across handlers
+
+## Requirements
+1. Ensure the handler follows the structure shown in system.ts
+2. Apply the API guidelines from %%Guidelines%%
+3. Use appropriate types from common.ts
+4. Maintain consistent error handling patterns
+5. Add JSDoc comments for public methods
 
 ## Task
-Please analyze the implementation and suggest improvements based on the Swagger definition.
+Please analyze the implementation and:
+1. Update the code structure to match our standards
+2. Add proper type definitions
+3. Implement error handling
+4. Add documentation
+5. Ensure consistency with other handlers
 ```
+
+This example template provides clear instructions for standardizing handler implementations across a system.
 
 ## Usage
 
@@ -144,8 +154,11 @@ This will:
 1. Load the batch configuration
 2. Set environment variables
 3. Process template variables
-4. Execute Aider with the configured parameters
-5. Clean up temporary files
+4. Create LastMessage.txt with the processed template
+5. Execute Aider with the configured parameters and LastMessage.txt
+6. Clean up temporary files after completion
+
+Note: LastMessage.txt is used internally to pass the processed template to Aider. The file is overwritten on each batch operation and removed when processing completes.
 
 ## Development and Testing
 
