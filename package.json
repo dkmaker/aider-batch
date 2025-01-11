@@ -1,0 +1,26 @@
+{
+  "name": "dkmaker-aider-batch",
+  "version": "1.0.0",
+  "description": "Node.js CLI tool for batch processing Aider commands",
+  "main": "src/index.js",
+  "type": "module",
+  "bin": {
+    "dkmaker-aider-batch": "./src/cli.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "aider",
+    "batch",
+    "cli"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "chalk": "^5.4.1",
+    "commander": "^13.0.0",
+    "fs-extra": "^11.2.0",
+    "inquirer": "^12.3.0"
+  }
+}
