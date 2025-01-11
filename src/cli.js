@@ -7,7 +7,7 @@ import { listBatches } from './commands/list.js';
 import chalk from 'chalk';
 
 program
-  .name('dkmaker-aider-batch')
+  .name('aider-batch')
   .description('CLI tool for batch processing Aider commands')
   .version('1.0.0');
 
@@ -35,7 +35,7 @@ program
     } catch (error) {
       console.error(chalk.red(`\n✗ Error during batch processing: ${error.message}`));
       if (error.message.includes('not found')) {
-        console.log(chalk.yellow('\nTip: Use "dkmaker-aider-batch list" to see available batches'));
+        console.log(chalk.yellow('\nTip: Use "aider-batch list" to see available batches'));
       }
       process.exit(1);
     }

@@ -1,12 +1,18 @@
 import fs from 'fs-extra';
 import path from 'path';
 import chalk from 'chalk';
-import inquirer from 'inquirer';
 
 const defaultConfig = {
   commonFiles: {
-    read: [],
-    write: []
+    read: [
+      "src/utils/requestHandlerFactory.js",
+      "src/utils/responseFormatter.js",
+      "src/utils/errorHandler.js",
+      "src/utils/validators.js"
+    ],
+    write: [
+      "src/functions/httpUser.js"
+    ]
   },
   env: {
     ANTHROPIC_API_KEY: "your-api-key-here"
@@ -25,13 +31,20 @@ const defaultConfig = {
   ],
   batches: [
     {
-      "name": "Initial Batch",
-      "read": [],
-      "write": [],
-      "params": [],
+      "name": "Example Batch",
+      "read": [
+        "src/api/user.js",
+        "src/models/user.js"
+      ],
+      "write": [
+        "src/controllers/userController.js"
+      ],
+      "params": [
+        "--file src/api/user.js"
+      ],
       "variables": {
-        "SourceFile": "",
-        "SwaggerFile": ""
+        "SourceFile": "src/api/user.js",
+        "SwaggerFile": "swagger/user-api.json"
       }
     }
   ]
@@ -42,7 +55,12 @@ const defaultTemplate = `# Process %%SourceFile%%
 Using the Swagger definition from %%SwaggerFile%%, analyze and update the implementation.
 
 ## Context Files
-...`;
+The following files provide context for the implementation:
+- API Definition: %%SwaggerFile%%
+- Source File: %%SourceFile%%
+
+## Task
+Please analyze the implementation and suggest improvements based on the Swagger definition.`;
 
 export async function createProject(projectName) {
   const projectDir = `.aiderBatch_${projectName}`;
@@ -51,63 +69,29 @@ export async function createProject(projectName) {
   if (await fs.pathExists(projectDir)) {
     console.log(chalk.yellow(`\nBatch '${projectName}' already exists`));
     console.log(chalk.gray('\nTip: Use one of these commands:'));
-    console.log(chalk.white('  dkmaker-aider-batch start ' + projectName));
-    console.log(chalk.white('  dkmaker-aider-batch list'));
+    console.log(chalk.white('  aider-batch start ' + projectName));
+    console.log(chalk.white('  aider-batch list'));
     process.exit(1);
   }
-
-  // Get batch configuration
-  const answers = await inquirer.prompt([
-    {
-      type: 'input',
-      name: 'sourceFile',
-      message: 'Enter source file path:',
-      validate: input => input.length > 0 || 'Source file is required'
-    },
-    {
-      type: 'input',
-      name: 'swaggerFile',
-      message: 'Enter Swagger file path:',
-      validate: input => input.length > 0 || 'Swagger file is required'
-    },
-    {
-      type: 'input',
-      name: 'readFiles',
-      message: 'Enter files to read (comma-separated):',
-      filter: input => input ? input.split(',').map(s => s.trim()) : []
-    },
-    {
-      type: 'input',
-      name: 'writeFiles',
-      message: 'Enter files to write (comma-separated):',
-      filter: input => input ? input.split(',').map(s => s.trim()) : []
-    }
-  ]);
 
   try {
     // Create project directory
     await fs.mkdir(projectDir);
     console.log(chalk.blue(`Creating batch project: ${projectDir}`));
 
-    // Update config with user input
-    const config = { ...defaultConfig };
-    config.batches[0].variables.SourceFile = answers.sourceFile;
-    config.batches[0].variables.SwaggerFile = answers.swaggerFile;
-    config.batches[0].read = answers.readFiles;
-    config.batches[0].write = answers.writeFiles;
-
-    // Create batch-config.json
+    // Create batch-config.json with example configuration
     const configPath = path.join(projectDir, 'batch-config.json');
-    await fs.writeJson(configPath, config, { spaces: 2 });
-    console.log(chalk.blue('Created batch-config.json'));
+    await fs.writeJson(configPath, defaultConfig, { spaces: 2 });
+    console.log(chalk.blue('Created batch-config.json with example configuration'));
 
     // Create prompt-template.md
     const templatePath = path.join(projectDir, 'prompt-template.md');
     await fs.writeFile(templatePath, defaultTemplate);
     console.log(chalk.blue('Created prompt-template.md'));
 
-    console.log(chalk.gray('\nTip: Start your batch with:'));
-    console.log(chalk.white(`  dkmaker-aider-batch start ${projectName}`));
+    console.log(chalk.gray('\nTip: Edit batch-config.json to configure your batch settings'));
+    console.log(chalk.gray('     Then start your batch with:'));
+    console.log(chalk.white(`  aider-batch start ${projectName}`));
 
   } catch (error) {
     // Clean up on error

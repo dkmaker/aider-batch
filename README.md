@@ -5,7 +5,7 @@ A Node.js CLI tool for batch processing Aider commands using templates and confi
 ## Installation
 
 ```bash
-npx dkmaker-aider-batch create my-batch
+npx aider-batch create my-batch
 ```
 
 This will create a new directory with the following structure:
@@ -20,13 +20,20 @@ Note: Projects are created in a `.aiderBatch_` prefixed directory to keep them o
 
 ## Configuration
 
-The `batch-config.json` file contains these main sections:
+The `batch-config.json` file is created with example configuration that you can modify:
 
 ```json
 {
   "commonFiles": {
-    "read": [],
-    "write": []
+    "read": [
+      "src/utils/requestHandlerFactory.js",
+      "src/utils/responseFormatter.js",
+      "src/utils/errorHandler.js",
+      "src/utils/validators.js"
+    ],
+    "write": [
+      "src/functions/httpUser.js"
+    ]
   },
   "env": {
     "ANTHROPIC_API_KEY": "your-api-key-here"
@@ -45,7 +52,7 @@ The `batch-config.json` file contains these main sections:
   ],
   "batches": [
     {
-      "name": "Initial Batch",
+      "name": "Example Batch",
       "read": [
         "src/api/user.js",
         "src/models/user.js"
@@ -54,11 +61,11 @@ The `batch-config.json` file contains these main sections:
         "src/controllers/userController.js"
       ],
       "params": [
-        "--file path/to/source.js"
+        "--file src/api/user.js"
       ],
       "variables": {
-        "SourceFile": "path/to/source.js",
-        "SwaggerFile": "path/to/swagger.json"
+        "SourceFile": "src/api/user.js",
+        "SwaggerFile": "swagger/user-api.json"
       }
     }
   ]
@@ -88,7 +95,7 @@ The `batch-config.json` file contains these main sections:
 
 ## Template File
 
-The `prompt-template.md` file can contain placeholders that will be replaced with values from the batch configuration:
+The `prompt-template.md` file is created with example content that you can customize:
 
 ```markdown
 # Process %%SourceFile%%
@@ -96,7 +103,12 @@ The `prompt-template.md` file can contain placeholders that will be replaced wit
 Using the Swagger definition from %%SwaggerFile%%, analyze and update the implementation.
 
 ## Context Files
-...
+The following files provide context for the implementation:
+- API Definition: %%SwaggerFile%%
+- Source File: %%SourceFile%%
+
+## Task
+Please analyze the implementation and suggest improvements based on the Swagger definition.
 ```
 
 ## Usage
@@ -104,22 +116,20 @@ Using the Swagger definition from %%SwaggerFile%%, analyze and update the implem
 ### Create a New Batch
 
 ```bash
-npx dkmaker-aider-batch create my-batch
+npx aider-batch create my-batch
 ```
 
 This will:
 1. Create a new `.aiderBatch_my-batch` directory
-2. Prompt for configuration:
-   - Source file path
-   - Swagger file path
-   - Files to read
-   - Files to write
-3. Generate configuration files with default Aider parameters
+2. Generate example configuration files
+3. Create a template with placeholders
+
+After creation, edit the batch-config.json file to configure your specific batch settings.
 
 ### List Available Batches
 
 ```bash
-npx dkmaker-aider-batch list
+npx aider-batch list
 ```
 
 Shows all available batches in a table format with their locations.
@@ -127,7 +137,7 @@ Shows all available batches in a table format with their locations.
 ### Run a Batch
 
 ```bash
-npx dkmaker-aider-batch start my-batch
+npx aider-batch start my-batch
 ```
 
 This will:
@@ -159,7 +169,7 @@ npm link
 
 Now you can use the tool locally with:
 ```bash
-dkmaker-aider-batch create test-batch
+aider-batch create test-batch
 ```
 
 ### Testing NPX Installation
@@ -172,12 +182,12 @@ cd test-npx
 
 2. Test the latest published version:
 ```bash
-npx dkmaker-aider-batch create test-batch
+npx aider-batch create test-batch
 ```
 
 3. Test a specific version:
 ```bash
-npx dkmaker-aider-batch@1.0.0 create test-batch
+npx aider-batch@1.0.0 create test-batch
 ```
 
 ### Testing Local Build with NPX
